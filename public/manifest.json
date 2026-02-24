@@ -1,0 +1,16 @@
+{
+  "name": "Startup Compass",
+  "short_name": "Compass",
+  "description": "Find the right business model for your reality.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0c87f2",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
