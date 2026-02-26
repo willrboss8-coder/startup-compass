@@ -18,12 +18,23 @@ export function ProgressHeader({ percent, answered, total, warnings }: ProgressH
   const meter = realityMeterColor(warnings);
   const color = colorMap[meter];
 
+  const phaseLabel =
+    percent < 25 ? 'Your capacity'
+    : percent < 45 ? 'Your constraints'
+    : percent < 65 ? 'Your preferences'
+    : percent < 80 ? 'Your skills'
+    : percent < 95 ? 'Distribution'
+    : 'Fine-tuning';
+
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-medium text-slate-700">
-          {answered} of {total} questions
-        </span>
+      <div className="flex items-center justify-between">
+        <div>
+          <span className="text-sm font-medium text-slate-700">
+            {answered} of {total}
+          </span>
+          <span className="ml-2 text-xs text-slate-400">{phaseLabel}</span>
+        </div>
         <span className={`flex items-center gap-1.5 text-xs font-medium ${color.text}`}>
           <span className={`h-2 w-2 rounded-full ${color.bg}`} />
           {color.label}

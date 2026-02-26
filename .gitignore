@@ -3,3 +3,4 @@ dist
 .node
 .DS_Store
 *.local
+.vercel

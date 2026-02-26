@@ -12,6 +12,14 @@ import { RealityPanel } from '../components/RealityPanel';
 import { AdjustGoalsPanel } from '../components/AdjustGoalsPanel';
 import { ComparisonMode } from '../components/ComparisonMode';
 import { ExportPanel } from '../components/ExportPanel';
+import { EmailCapture } from '../components/EmailCapture';
+
+function scoreLabel(score: number): { text: string; color: string } {
+  if (score >= 80) return { text: 'Excellent fit', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
+  if (score >= 65) return { text: 'Strong fit', color: 'text-brand-700 bg-brand-50 border-brand-200' };
+  if (score >= 50) return { text: 'Moderate fit', color: 'text-amber-700 bg-amber-50 border-amber-200' };
+  return { text: 'Weak fit', color: 'text-slate-600 bg-slate-50 border-slate-200' };
+}
 
 export function Results() {
   const [answers, setAnswers] = useState<AnswerState>({});
@@ -35,7 +43,6 @@ export function Results() {
 
   const displayResults = useMemo(() => {
     if (viewMode === 'meets-goal') {
-      const profit = Number(answers.desired_monthly_profit) || 0;
       return results.filter((r) => {
         const hourly = impliedHourlyRate(answers);
         return hourly <= 200 || r.score >= 50;
@@ -73,6 +80,8 @@ export function Results() {
   }, []);
 
   const hasBlockers = warnings.some((w) => w.severity === 'blocker');
+  const topResult = displayResults[0];
+  const restResults = displayResults.slice(1);
 
   if (Object.keys(answers).length === 0) {
     return (
@@ -96,18 +105,41 @@ export function Results() {
   return (
     <LayoutShell>
       <div className="space-y-6 pb-8">
+        {/* Header */}
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900">Your Results</h1>
           <p className="mt-1 text-sm text-slate-600">
-            Based on your answers, here are the business models that fit best.
+            Ranked by fit to your time, budget, skills, and goals.
           </p>
           {hasBlockers && (
             <p className="mt-2 text-xs font-medium text-red-600">
-              Some results may not meet your stated goals. See reality checks below.
+              Some of your goals may not be realistic yet. See reality checks below.
             </p>
           )}
         </div>
 
+        {/* Top pick callout */}
+        {topResult && (
+          <div className="rounded-2xl border-2 border-brand-300 bg-gradient-to-br from-brand-50 to-white p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="rounded-full bg-brand-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                Best match
+              </span>
+              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${scoreLabel(topResult.score).color}`}>
+                {scoreLabel(topResult.score).text}
+              </span>
+            </div>
+            <h2 className="text-lg font-bold text-slate-900">{topResult.model.title}</h2>
+            <p className="mt-0.5 text-xs text-slate-600 leading-relaxed">{topResult.model.description}</p>
+            <div className="mt-3 flex items-center gap-4 text-xs text-slate-500">
+              <span>{topResult.model.typicalHours.min}–{topResult.model.typicalHours.max} hrs/wk</span>
+              <span>First $ in {topResult.model.timeToFirstDollar.minWeeks}–{topResult.model.timeToFirstDollar.maxWeeks}w</span>
+              <span className="font-semibold text-brand-700">{topResult.score}/100</span>
+            </div>
+          </div>
+        )}
+
+        {/* View mode toggle */}
         <div className="flex gap-2">
           <button
             onClick={() => setViewMode('closest')}
@@ -131,6 +163,7 @@ export function Results() {
           </button>
         </div>
 
+        {/* All result cards */}
         <div className="space-y-4">
           {displayResults.map((result, i) => (
             <div key={result.model.id}>
@@ -159,6 +192,10 @@ export function Results() {
           ))}
         </div>
 
+        {/* Email capture — placed after results for maximum intent */}
+        <EmailCapture source="results" topModelId={topResult?.model.id} />
+
+        {/* Comparison */}
         {comparisonResults.length === 2 && (
           <div>
             <h3 className="text-base font-bold text-slate-900 mb-3">Comparison</h3>
@@ -178,7 +215,7 @@ export function Results() {
         />
 
         <p className="text-center text-xs text-slate-400 pt-4">
-          Educational guidance only. No guarantees.
+          Startup Compass is educational guidance, not financial advice.
         </p>
       </div>
     </LayoutShell>

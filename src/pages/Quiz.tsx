@@ -7,7 +7,6 @@ import {
   getQuestionById,
   getProgress,
   isQuizComplete,
-  demoPresets,
 } from '../logic/questionEngine';
 import { evaluateReality } from '../logic/realityChecks';
 import { loadState, saveState } from '../logic/storage';
@@ -103,21 +102,6 @@ export function Quiz() {
     goNext();
   }, [currentId, goNext]);
 
-  const loadPreset = useCallback(
-    (presetIndex: number) => {
-      const preset = demoPresets[presetIndex];
-      if (!preset) return;
-      setAnswers(preset.answers);
-      const visible = getVisibleQuestions(preset.answers);
-      const unanswered = visible.find((q) => preset.answers[q.id] === undefined);
-      const nextId = unanswered?.id ?? visible[visible.length - 1]?.id ?? null;
-      setCurrentId(nextId);
-      setHistory([]);
-      persist(preset.answers, nextId, []);
-    },
-    [persist]
-  );
-
   const hasAnswer = currentId ? answers[currentId] !== undefined : false;
 
   return (
@@ -130,25 +114,6 @@ export function Quiz() {
           total={progress.total}
           warnings={warnings}
         />
-
-        <div>
-          <select
-            onChange={(e) => {
-              if (e.target.value) loadPreset(Number(e.target.value));
-            }}
-            defaultValue=""
-            className="tap-target w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600 outline-none focus:border-brand-400"
-          >
-            <option value="" disabled>
-              Load demo preset...
-            </option>
-            {demoPresets.map((p, i) => (
-              <option key={i} value={i}>
-                {p.name} — {p.description}
-              </option>
-            ))}
-          </select>
-        </div>
 
         {warnings.length > 0 && <RealityBanner warnings={warnings} />}
 
