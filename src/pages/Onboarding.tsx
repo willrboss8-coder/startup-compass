@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { LayoutShell } from '../components/LayoutShell';
 import { resetState } from '../logic/storage';
+import { Disclaimer } from '../components/Disclaimer';
 
 export function Onboarding() {
   const handleStart = () => {
@@ -81,13 +82,7 @@ export function Onboarding() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <p className="text-xs text-slate-500 leading-relaxed">
-            <span className="font-semibold text-slate-700">Disclaimer:</span> Educational guidance only. No guarantees.
-            This tool uses deterministic scoring — no AI, no network calls, no data collection.
-            Everything runs in your browser and stays on your device.
-          </p>
-        </div>
+        <Disclaimer variant="full" />
 
         <Link
           to="/quiz"

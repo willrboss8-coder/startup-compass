@@ -16,6 +16,7 @@ import { EmailCapture } from '../components/EmailCapture';
 import { ShareResults } from '../components/ShareResults';
 import { ThirtyDayRoadmap } from '../components/ThirtyDayRoadmap';
 import { DeepScoring } from '../components/DeepScoring';
+import { Disclaimer } from '../components/Disclaimer';
 
 function scoreLabel(score: number): { text: string; color: string } {
   if (score >= 80) return { text: 'Excellent fit', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
@@ -247,9 +248,9 @@ export function Results() {
           onImport={handleImport}
         />
 
-        <p className="text-center text-xs text-slate-400 pt-4">
-          Startup Compass is educational guidance, not financial advice.
-        </p>
+        <div className="pt-4">
+          <Disclaimer variant="compact" />
+        </div>
       </div>
     </LayoutShell>
   );
