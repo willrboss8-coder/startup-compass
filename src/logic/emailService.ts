@@ -12,6 +12,13 @@ export interface EmailSubscriber {
   topModelId?: string;
 }
 
+export interface SubscribeContext {
+  topModelId?: string;
+  topModelTitle?: string;
+  confidenceLabel?: string;
+  planSummary?: string;
+}
+
 const STORAGE_KEY = 'startup-compass-emails';
 
 function loadEmails(): EmailSubscriber[] {
@@ -38,20 +45,27 @@ function persistEmail(subscriber: EmailSubscriber): void {
 export async function subscribeEmail(
   email: string,
   source: EmailSubscriber['source'],
-  topModelId?: string
+  context?: SubscribeContext
 ): Promise<{ ok: boolean; error?: string }> {
   const subscriber: EmailSubscriber = {
     email,
     source,
     capturedAt: new Date().toISOString(),
-    topModelId,
+    topModelId: context?.topModelId,
   };
 
   try {
     const res = await fetch('/api/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, source, topModelId }),
+      body: JSON.stringify({
+        email,
+        source,
+        topModelId: context?.topModelId,
+        topModelTitle: context?.topModelTitle,
+        confidenceLabel: context?.confidenceLabel,
+        planSummary: context?.planSummary,
+      }),
     });
     const data = await res.json();
 
@@ -61,7 +75,6 @@ export async function subscribeEmail(
     }
     return { ok: false, error: data.error || 'Subscription failed' };
   } catch {
-    // API unreachable — fall back to localStorage only
     persistEmail(subscriber);
     return { ok: true };
   }

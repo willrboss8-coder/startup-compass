@@ -13,12 +13,26 @@ import { AdjustGoalsPanel } from '../components/AdjustGoalsPanel';
 import { ComparisonMode } from '../components/ComparisonMode';
 import { ExportPanel } from '../components/ExportPanel';
 import { EmailCapture } from '../components/EmailCapture';
+import { ShareResults } from '../components/ShareResults';
 
 function scoreLabel(score: number): { text: string; color: string } {
   if (score >= 80) return { text: 'Excellent fit', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
   if (score >= 65) return { text: 'Strong fit', color: 'text-brand-700 bg-brand-50 border-brand-200' };
   if (score >= 50) return { text: 'Moderate fit', color: 'text-amber-700 bg-amber-50 border-amber-200' };
   return { text: 'Weak fit', color: 'text-slate-600 bg-slate-50 border-slate-200' };
+}
+
+function buildPlanSummary(top: ScoredResult, all: ScoredResult[]): string {
+  const parts = [
+    `#1 ${top.model.title} (${top.score}/100, ${top.confidence} confidence)`,
+  ];
+  if (all.length > 1) {
+    parts.push(`#2 ${all[1].model.title} (${all[1].score}/100)`);
+  }
+  if (top.topReasons.length > 0) {
+    parts.push(`Why: ${top.topReasons[0]}`);
+  }
+  return parts.join(' | ');
 }
 
 export function Results() {
@@ -193,7 +207,16 @@ export function Results() {
         </div>
 
         {/* Email capture — placed after results for maximum intent */}
-        <EmailCapture source="results" topModelId={topResult?.model.id} />
+        <EmailCapture
+          source="results"
+          topModelId={topResult?.model.id}
+          topModelTitle={topResult?.model.title}
+          confidenceLabel={topResult ? scoreLabel(topResult.score).text : undefined}
+          planSummary={topResult ? buildPlanSummary(topResult, displayResults) : undefined}
+        />
+
+        {/* Share results */}
+        <ShareResults results={displayResults} />
 
         {/* Comparison */}
         {comparisonResults.length === 2 && (
