@@ -17,6 +17,8 @@ export interface FeatureAccess {
   simulation: boolean;
   adjustGoals: boolean;
   savedProfiles: boolean;
+  thirtyDayRoadmap: boolean;
+  deepScoring: boolean;
 }
 
 const TIER_ACCESS: Record<UserTier, FeatureAccess> = {
@@ -29,6 +31,8 @@ const TIER_ACCESS: Record<UserTier, FeatureAccess> = {
     simulation: false,
     adjustGoals: true,
     savedProfiles: false,
+    thirtyDayRoadmap: false,
+    deepScoring: false,
   },
   solo: {
     maxResults: 6,
@@ -39,6 +43,8 @@ const TIER_ACCESS: Record<UserTier, FeatureAccess> = {
     simulation: true,
     adjustGoals: true,
     savedProfiles: false,
+    thirtyDayRoadmap: true,
+    deepScoring: true,
   },
   pro: {
     maxResults: 6,
@@ -49,6 +55,8 @@ const TIER_ACCESS: Record<UserTier, FeatureAccess> = {
     simulation: true,
     adjustGoals: true,
     savedProfiles: true,
+    thirtyDayRoadmap: true,
+    deepScoring: true,
   },
 };
 

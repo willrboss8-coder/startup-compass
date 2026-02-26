@@ -14,6 +14,8 @@ import { ComparisonMode } from '../components/ComparisonMode';
 import { ExportPanel } from '../components/ExportPanel';
 import { EmailCapture } from '../components/EmailCapture';
 import { ShareResults } from '../components/ShareResults';
+import { ThirtyDayRoadmap } from '../components/ThirtyDayRoadmap';
+import { DeepScoring } from '../components/DeepScoring';
 
 function scoreLabel(score: number): { text: string; color: string } {
   if (score >= 80) return { text: 'Excellent fit', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
@@ -217,6 +219,14 @@ export function Results() {
 
         {/* Share results */}
         <ShareResults results={displayResults} />
+
+        {/* Premium sections — locked for free users */}
+        {topResult && (
+          <>
+            <ThirtyDayRoadmap result={topResult} />
+            <DeepScoring result={topResult} />
+          </>
+        )}
 
         {/* Comparison */}
         {comparisonResults.length === 2 && (
