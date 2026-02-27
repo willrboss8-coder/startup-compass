@@ -236,7 +236,7 @@ export function scoreModels(
       confidenceAdjustment -= 10;
     }
 
-    const score = clamp(Math.round(rawScore + confidenceAdjustment));
+    const score = clamp(Math.round((rawScore + confidenceAdjustment) * 10) / 10);
 
     const { explanation, topReasons, topMismatches } = buildExplanation(answers, model, breakdown);
 

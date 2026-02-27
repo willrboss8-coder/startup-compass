@@ -34,8 +34,9 @@ export function ShareResults({ results }: ShareResultsProps) {
 
     const top = results.slice(0, 5);
     top.forEach((r, i) => {
+      const sc = r.score % 1 === 0 ? String(r.score) : r.score.toFixed(1);
       lines.push(
-        `${i + 1}. ${r.model.title}  —  ${r.score}/100 (${scoreTag(r.score)}, ${r.confidence} confidence)`
+        `${i + 1}. ${r.model.title}  —  ${sc}/100 (${scoreTag(r.score)}, ${r.confidence} confidence)`
       );
       if (r.topReasons.length > 0) {
         lines.push(`   Why: ${r.topReasons[0]}`);
