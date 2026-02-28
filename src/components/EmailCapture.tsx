@@ -30,7 +30,6 @@ export function EmailCapture({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    console.log('[EmailCapture] submit handler fired');
     const trimmed = email.trim().toLowerCase();
     if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
       setErrorMsg('Please enter a valid email.');
@@ -38,7 +37,6 @@ export function EmailCapture({
       return;
     }
     setStatus('loading');
-    console.log('[EmailCapture] calling subscribeEmail for:', trimmed);
     const result = await subscribeEmail(trimmed, source, {
       topModelId,
       topModelTitle,
