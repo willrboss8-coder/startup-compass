@@ -55,6 +55,7 @@ export async function subscribeEmail(
   };
 
   try {
+    console.log('[emailService] POSTing to /api/subscribe');
     const res = await fetch('/api/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -67,6 +68,7 @@ export async function subscribeEmail(
         planSummary: context?.planSummary,
       }),
     });
+    console.log('[emailService] response status:', res.status);
     const data = await res.json();
 
     if (data.ok) {
@@ -74,7 +76,8 @@ export async function subscribeEmail(
       return { ok: true };
     }
     return { ok: false, error: data.error || 'Subscription failed' };
-  } catch {
+  } catch (err) {
+    console.error('[emailService] fetch failed, falling back to localStorage:', err);
     persistEmail(subscriber);
     return { ok: true };
   }
