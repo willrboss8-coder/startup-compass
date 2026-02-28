@@ -19,6 +19,7 @@ import { SavedIndicator } from '../components/SavedIndicator';
 
 const STEP_KEY = 'startup-compass-results-step';
 const CHECKLIST_KEY = 'startup-compass-checklist';
+const PLAN_MODEL_KEY = 'startup-compass-plan-model';
 
 const BREAKDOWN_LABELS: Record<string, string> = {
   timeFit: 'Time Fit',
@@ -105,6 +106,14 @@ function persistStep(step: 'summary' | 'plan') {
   try { localStorage.setItem(STEP_KEY, step); } catch { /* */ }
 }
 
+function loadPlanModelId(): string | null {
+  try { return localStorage.getItem(PLAN_MODEL_KEY); } catch { return null; }
+}
+
+function persistPlanModelId(id: string) {
+  try { localStorage.setItem(PLAN_MODEL_KEY, id); } catch { /* */ }
+}
+
 function checkMicrocopy(count: number, total: number): string | null {
   if (count === 0) return null;
   if (count >= total) return "Week 1 done. Don\u2019t break the streak.";
@@ -129,6 +138,7 @@ export function Results() {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [checkedDays, setCheckedDays] = useState<Set<number>>(new Set());
+  const [planModelId, setPlanModelId] = useState<string | null>(loadPlanModelId);
 
   useEffect(() => {
     const state = loadState();
@@ -139,20 +149,40 @@ export function Results() {
   const results = useMemo(() => scoreModels(answers, businessModels, warnings), [answers, warnings]);
 
   const topResult = results[0];
+  const planResult = useMemo(() => {
+    if (planModelId) {
+      const found = results.find((r) => r.model.id === planModelId);
+      if (found) return found;
+    }
+    return topResult;
+  }, [planModelId, results, topResult]);
 
   useEffect(() => {
-    if (topResult) setCheckedDays(loadCheckedDays(topResult.model.id));
-  }, [topResult]);
+    if (planResult) setCheckedDays(loadCheckedDays(planResult.model.id));
+  }, [planResult]);
 
   useEffect(() => {
     if (results.length > 0) saveResults(results, warnings);
   }, [results, warnings]);
 
-  const goToPlan = useCallback(() => {
+  const selectPlanModel = useCallback((id: string) => {
+    setPlanModelId(id);
+    persistPlanModelId(id);
+    setCheckedDays(loadCheckedDays(id));
     setStep('plan');
     persistStep('plan');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
+
+  const goToPlan = useCallback(() => {
+    if (topResult && !planModelId) {
+      setPlanModelId(topResult.model.id);
+      persistPlanModelId(topResult.model.id);
+    }
+    setStep('plan');
+    persistStep('plan');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [topResult, planModelId]);
 
   const goToSummary = useCallback(() => {
     setStep('summary');
@@ -165,10 +195,10 @@ export function Results() {
       const next = new Set(prev);
       if (next.has(i)) next.delete(i);
       else next.add(i);
-      if (topResult) saveCheckedDays(topResult.model.id, next);
+      if (planResult) saveCheckedDays(planResult.model.id, next);
       return next;
     });
-  }, [topResult]);
+  }, [planResult]);
 
   const handleGoalChange = useCallback((key: string, value: unknown) => {
     setAnswers((prev) => {
@@ -304,7 +334,41 @@ export function Results() {
             </div>
           </section>
 
-          {/* E) Compass Pro teaser */}
+          {/* Worth Considering */}
+          {worthConsidering.length > 0 && (
+            <section>
+              <h3 className="text-sm font-bold text-slate-900 mb-3">Worth considering</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {worthConsidering.map((alt, i) => (
+                  <AltCard key={alt.model.id} result={alt} rank={i + 2} allResults={results} onCompare={toggleCompare} isComparing={compareIds.includes(alt.model.id)} onSetPlan={selectPlanModel} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* See more options */}
+          {moreOptions.length > 0 && !showMore && (
+            <div className="flex justify-center">
+              <button
+                onClick={() => setShowMore(true)}
+                className="tap-target rounded-lg border border-slate-200 bg-white px-5 py-2 text-xs font-medium text-slate-600 shadow-sm transition-all hover:bg-slate-50 active:scale-[0.97]"
+              >
+                See more options ({moreOptions.length})
+              </button>
+            </div>
+          )}
+          {showMore && moreOptions.length > 0 && (
+            <section>
+              <h3 className="text-sm font-bold text-slate-900 mb-3">Alternative paths</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {moreOptions.map((alt, i) => (
+                  <AltCard key={alt.model.id} result={alt} rank={i + 4} allResults={results} onCompare={toggleCompare} isComparing={compareIds.includes(alt.model.id)} onSetPlan={selectPlanModel} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Compass Pro teaser */}
           <section className="rounded-xl border border-brand-200 bg-brand-50/40 p-4">
             <div className="flex items-center gap-2 mb-2">
               <ProIcon size="sm" />
@@ -350,7 +414,7 @@ export function Results() {
   /* ════════════════════════════════════════════════════ */
   /*  STEP 2: PLAN (Prescription)                       */
   /* ════════════════════════════════════════════════════ */
-  const micro = topResult ? checkMicrocopy(checkedDays.size, topResult.model.first7DaysPlan.length) : null;
+  const micro = planResult ? checkMicrocopy(checkedDays.size, planResult.model.first7DaysPlan.length) : null;
 
   return (
     <LayoutShell>
@@ -371,17 +435,17 @@ export function Results() {
         </div>
 
         {/* B) 7-day checklist */}
-        {topResult && (
+        {planResult && (
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="text-base font-bold text-slate-900">Your First 7 Days</h3>
               <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold text-brand-700">
-                {topResult.model.title}
+                {planResult.model.title}
               </span>
             </div>
             <p className="text-xs text-slate-500 mb-4">Check off each step as you go.</p>
             <ol className="space-y-2.5">
-              {topResult.model.first7DaysPlan.map((step, i) => {
+              {planResult.model.first7DaysPlan.map((s, i) => {
                 const done = checkedDays.has(i);
                 return (
                   <li key={i} className="flex items-start gap-3">
@@ -394,19 +458,19 @@ export function Results() {
                     >
                       {done && <CheckSvg />}
                     </button>
-                    <span className={`text-sm leading-relaxed ${done ? 'text-slate-400 line-through' : 'text-slate-700'}`}>{step}</span>
+                    <span className={`text-sm leading-relaxed ${done ? 'text-slate-400 line-through' : 'text-slate-700'}`}>{s}</span>
                   </li>
                 );
               })}
             </ol>
             <div className="mt-4 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2 text-slate-400">
-                <span className="font-semibold text-slate-600">{checkedDays.size}/{topResult.model.first7DaysPlan.length}</span>
+                <span className="font-semibold text-slate-600">{checkedDays.size}/{planResult.model.first7DaysPlan.length}</span>
                 completed
               </div>
               {micro && (
                 <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${
-                  checkedDays.size >= topResult.model.first7DaysPlan.length
+                  checkedDays.size >= planResult.model.first7DaysPlan.length
                     ? 'bg-emerald-50 text-emerald-700'
                     : checkedDays.size >= 4
                       ? 'bg-brand-50 text-brand-700'
@@ -419,42 +483,8 @@ export function Results() {
           </section>
         )}
 
-        {/* C) Worth Considering */}
-        {worthConsidering.length > 0 && (
-          <section>
-            <h3 className="text-sm font-bold text-slate-900 mb-3">Worth considering</h3>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {worthConsidering.map((alt, i) => (
-                <AltCard key={alt.model.id} result={alt} rank={i + 2} allResults={results} onCompare={toggleCompare} isComparing={compareIds.includes(alt.model.id)} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* D) See more options */}
-        {moreOptions.length > 0 && !showMore && (
-          <div className="flex justify-center">
-            <button
-              onClick={() => setShowMore(true)}
-              className="tap-target rounded-lg border border-slate-200 bg-white px-5 py-2 text-xs font-medium text-slate-600 shadow-sm transition-all hover:bg-slate-50 active:scale-[0.97]"
-            >
-              See more options ({moreOptions.length})
-            </button>
-          </div>
-        )}
-        {showMore && moreOptions.length > 0 && (
-          <section>
-            <h3 className="text-sm font-bold text-slate-900 mb-3">Alternative paths</h3>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {moreOptions.map((alt, i) => (
-                <AltCard key={alt.model.id} result={alt} rank={i + 4} allResults={results} onCompare={toggleCompare} isComparing={compareIds.includes(alt.model.id)} />
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* E) Explain the match (collapsed) */}
-        {topResult && (
+        {planResult && (
           <section className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             <button
               onClick={() => setShowBreakdown(!showBreakdown)}
@@ -462,7 +492,7 @@ export function Results() {
             >
               <div>
                 <h3 className="text-sm font-bold text-slate-900">Explain the match</h3>
-                <p className="text-[10px] text-slate-500 mt-0.5">7-dimension scoring breakdown for {topResult.model.title}</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">7-dimension scoring breakdown for {planResult.model.title}</p>
               </div>
               <svg className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${showBreakdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path d="m19 9-7 7-7-7" />
@@ -470,7 +500,7 @@ export function Results() {
             </button>
             {showBreakdown && (
               <div className="border-t border-slate-100 px-5 py-4 space-y-3">
-                {(Object.entries(topResult.fitBreakdown) as [keyof FitBreakdown, number][])
+                {(Object.entries(planResult.fitBreakdown) as [keyof FitBreakdown, number][])
                   .sort((a, b) => b[1] - a[1])
                   .map(([key, val]) => (
                   <div key={key}>
@@ -483,7 +513,7 @@ export function Results() {
                     </div>
                   </div>
                 ))}
-                <p className="text-xs text-slate-500 italic leading-relaxed pt-2">{topResult.explanation}</p>
+                <p className="text-xs text-slate-500 italic leading-relaxed pt-2">{planResult.explanation}</p>
               </div>
             )}
           </section>
@@ -619,9 +649,10 @@ function ProIcon({ size }: { size: 'sm' | 'md' }) {
   );
 }
 
-function AltCard({ result, rank, allResults, onCompare, isComparing }: {
+function AltCard({ result, rank, allResults, onCompare, isComparing, onSetPlan }: {
   result: ScoredResult; rank: number; allResults: ScoredResult[];
   onCompare: (id: string) => void; isComparing: boolean;
+  onSetPlan?: (id: string) => void;
 }) {
   const tied = isTied(result, allResults);
   return (
@@ -651,10 +682,18 @@ function AltCard({ result, rank, allResults, onCompare, isComparing }: {
           <span className="font-semibold text-amber-700">Tradeoff:</span> {result.topMismatches[0]}
         </p>
       )}
-      <div className="mt-3">
+      <div className="mt-3 flex gap-2">
+        {onSetPlan && (
+          <button
+            onClick={() => onSetPlan(result.model.id)}
+            className="flex-1 tap-target rounded-lg py-1.5 text-[10px] font-semibold text-brand-700 bg-brand-50 border border-brand-200 transition-all hover:bg-brand-100 active:scale-[0.98]"
+          >
+            Set as my plan
+          </button>
+        )}
         <button
           onClick={() => onCompare(result.model.id)}
-          className={`w-full tap-target rounded-lg py-1.5 text-[10px] font-medium transition-all active:scale-[0.98] ${
+          className={`flex-1 tap-target rounded-lg py-1.5 text-[10px] font-medium transition-all active:scale-[0.98] ${
             isComparing ? 'bg-brand-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
         >
